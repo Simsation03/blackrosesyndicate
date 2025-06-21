@@ -1,0 +1,13 @@
+{
+  "name": "blackrose-site",
+  "version": "1.0.0",
+  "description": "Secure syndicate access site",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "bcrypt": "^5.0.1",
+    "express": "^4.17.1"
+  }
+}
