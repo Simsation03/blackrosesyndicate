@@ -6,9 +6,8 @@ const bodyParser = require('body-parser');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
+// Middleware - note: session before static
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(express.static('public'));
 
 app.use(session({
   secret: 'blackrose-secret',
@@ -16,19 +15,20 @@ app.use(session({
   saveUninitialized: true,
 }));
 
-// 🥷 Syndicate Members (Updated: One Dashboard for All)
-const users = {
-  Don:       { alias: 'Don',       passcode: 'powerlegacy',   role: 'Don' },
-  LaFiera:   { alias: 'LaFiera',   passcode: 'crownrose',     role: 'Donna (First Lady)' },
-  Massimo:   { alias: 'Massimo',   passcode: 'rosequeen',     role: 'Consigliere' },
-  Vesper:    { alias: 'Vesper',    passcode: 'venomblade',    role: 'Underboss' },
-  Ghostwire: { alias: 'Ghostwire', passcode: 'rosesfall2025', role: 'Tech Officer' },
-  Reaper:    { alias: 'Reaper',    passcode: 'blackveil',     role: 'Special Ops' },
-  Kunoichi:  { alias: 'Kunoichi',  passcode: 'shadowslip',    role: 'Infiltration' },
-  Spectra:   { alias: 'Spectra',   passcode: 'opticnet',      role: 'Surveillance' },
-  Rocco:     { alias: 'Rocco',     passcode: 'ironfist',      role: 'Enforcer' }
-};
+app.use(express.static('public'));
 
+// 🥷 Syndicate Members (Uppercase aliases)
+const users = {
+  DON:       { alias: 'DON',       passcode: 'powerlegacy',   role: 'Don' },
+  LAFIERA:   { alias: 'LAFIERA',   passcode: 'crownrose',    role: 'Donna (First Lady)' },
+  MASSIMO:   { alias: 'MASSIMO',   passcode: 'rosequeen',    role: 'Consigliere' },
+  VESPER:    { alias: 'VESPER',    passcode: 'venomblade',   role: 'Underboss' },
+  GHOSTWIRE: { alias: 'GHOSTWIRE', passcode: 'rosesfall2025',role: 'Tech Officer' },
+  REAPER:    { alias: 'REAPER',    passcode: 'blackveil',    role: 'Special Ops' },
+  KUNOICHI:  { alias: 'KUNOICHI',  passcode: 'shadowslip',   role: 'Infiltration' },
+  SPECTRA:   { alias: 'SPECTRA',   passcode: 'opticnet',     role: 'Surveillance' },
+  ROCCO:     { alias: 'ROCCO',     passcode: 'ironfist',     role: 'Enforcer' }
+};
 
 // 📥 Login Page
 app.get('/', (req, res) => {
@@ -37,20 +37,24 @@ app.get('/', (req, res) => {
 
 // 🔐 Login Handler
 app.post('/login', (req, res) => {
-  const { alias, passcode } = req.body;
-  console.log('🛂 Login Attempt:');
-  console.log('Alias:', alias);
-  console.log('Passcode:', passcode);
+  const rawAlias = req.body.alias;
+  const passcodeInput = req.body.passcode;
+  const aliasInput = rawAlias.toUpperCase(); // Force uppercase
+  const user = users[aliasInput];
 
-  const user = users[alias];
-  console.log('Matched User:', user);
+  // 💬 Debug log for visibility
+  console.log("🔍 Login attempt:", {
+    rawAlias,
+    normalizedAlias: aliasInput,
+    passcodeInput,
+    userFound: !!user,
+    correctPasscode: user?.passcode === passcodeInput
+  });
 
-  if (user && user.passcode === passcode) {
-    console.log(`✅ Login success for ${alias}`);
+  if (user && user.passcode === passcodeInput) {
     req.session.user = user;
     res.redirect('/dashboard');
   } else {
-    console.log(`❌ Login failed for ${alias}`);
     res.send('❌ Access Denied. Wrong alias or passcode.');
   }
 });
@@ -64,7 +68,7 @@ app.get('/dashboard', (req, res) => {
   }
 });
 
-// ⚙️ Session Info (for displaying alias/role in dashboard)
+// ⚙️ Session Info (for alias/role display)
 app.get('/session-info', (req, res) => {
   if (req.session.user) {
     res.json({ alias: req.session.user.alias, role: req.session.user.role });
@@ -80,23 +84,7 @@ app.get('/logout', (req, res) => {
   });
 });
 
-// 🔥 Server Start
-
-const http = require('http').createServer(app);
-const io = require('socket.io')(http);
-
-io.on('connection', (socket) => {
-  console.log('💬 A user connected');
-
-  socket.on('chat message', (data) => {
-    io.emit('chat message', data); // Broadcast to all users
-  });
-
-  socket.on('disconnect', () => {
-    console.log('🚪 A user disconnected');
-  });
-});
-
-http.listen(PORT, () => {
-  console.log(`🌹 Black Rose Syndicate live at http://localhost:${PORT}`);
+// 🔥 Start Server
+app.listen(PORT, () => {
+  console.log(`🌹 Black Rose Syndicate running at http://localhost:${PORT}`);
 });
