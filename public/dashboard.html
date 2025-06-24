@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Syndicate Dashboard</title>
   <link rel="stylesheet" href="style.css" />
   <style>
@@ -10,13 +10,19 @@
       font-family: 'Segoe UI', sans-serif;
       background-color: #121212;
       color: #e0e0e0;
+      background-image: url('tech-lines-bg.png'); /* background image added */
+      background-repeat: no-repeat;
+      background-size: cover;
+      background-position: center;
     }
 
     .header {
       padding: 20px;
-      background-color: #1f1f1f;
+      background-color: rgba(31, 31, 31, 0.85);
       text-align: center;
       border-bottom: 2px solid #333;
+      position: relative;
+      z-index: 2;
     }
 
     .header h1 {
@@ -25,14 +31,31 @@
       color: #d93f3f;
     }
 
+    #marketCap {
+      margin: 15px auto;
+      font-size: 20px;
+      color: #f5a623;
+      text-align: center;
+      background-color: rgba(31, 31, 31, 0.8);
+      padding: 10px 20px;
+      border-radius: 10px;
+      width: max-content;
+      max-width: 300px;
+      user-select: none;
+      position: relative;
+      z-index: 2;
+    }
+
     #chat {
       margin: 20px auto;
       width: 80%;
       max-width: 800px;
-      background-color: #1e1e1e;
+      background-color: rgba(30, 30, 30, 0.9);
       border: 1px solid #444;
       border-radius: 10px;
       padding: 20px;
+      position: relative;
+      z-index: 2;
     }
 
     #messages {
@@ -43,6 +66,7 @@
       border-radius: 5px;
       margin-bottom: 10px;
       border: 1px solid #333;
+      color: #ddd;
     }
 
     #chat input[type=text] {
@@ -56,35 +80,42 @@
 
     #chat button {
       padding: 10px 20px;
-      background-color:maroon; 
+      background-color: maroon;
       color: white;
       border: none;
       border-radius: 5px;
       margin-left: 10px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    #chat button:hover {
+      background-color: #a00000;
     }
 
     .audio-player {
       text-align: center;
       margin-top: 20px;
+      position: relative;
+      z-index: 2;
     }
 
-  .auto-style1 {
-	font-size: larger;
-}
-
+    .auto-style1 {
+      font-size: larger;
+    }
   </style>
 </head>
 <body>
   <div class="header">
     <h1><span class="auto-style1">Welcome</span>, <span id="alias">Operative</span> | <span id="role">Role</span></h1>
   </div>
-&nbsp;<div id="chat">
-    <div id="messages" style="height: 200px; overflow-y: scroll;"></div>
-    <input type="text" id="messageInput" placeholder="Type your message...">
+
+  <div id="marketCap">Market Cap: Loading...</div>
+
+  <div id="chat">
+    <div id="messages"></div>
+    <input type="text" id="messageInput" placeholder="Type your message..." />
     <button onclick="sendMessage()">Send</button>
   </div>
-
-
 
   <div class="audio-player">
     <audio controls autoplay loop>
@@ -92,60 +123,57 @@
       Your browser does not support the audio tag.
     </audio>
   </div>
+
+  <script src="/socket.io/socket.io.js"></script>
   <script>
+    const socket = io();
+    const messages = document.getElementById('messages');
+    const input = document.getElementById('messageInput');
+    const marketCapDiv = document.getElementById('marketCap');
+
+    let currentAlias = 'Unknown';
+
     // Fetch user session data
     fetch('/session-info')
       .then(res => res.json())
       .then(data => {
+        currentAlias = data.alias;
         document.getElementById('alias').textContent = data.alias;
         document.getElementById('role').textContent = data.role;
       });
 
-    // Simple fake chat for demonstration
+    // Fetch market cap for Bitcoin (USD) from CoinGecko API
+    function fetchMarketCap() {
+      fetch('https://api.coingecko.com/api/v3/coins/bitcoin')
+        .then(res => res.json())
+        .then(data => {
+          const cap = data.market_data.market_cap.usd;
+          marketCapDiv.textContent = `Market Cap (BTC): $${cap.toLocaleString()}`;
+        })
+        .catch(() => {
+          marketCapDiv.textContent = 'Market Cap: Data unavailable';
+        });
+    }
+    fetchMarketCap();
+    // Update market cap every 5 minutes
+    setInterval(fetchMarketCap, 300000);
+
+    // Send chat message to server
     function sendMessage() {
-      const input = document.getElementById('messageInput');
       const msg = input.value.trim();
       if (msg) {
-        const container = document.getElementById('messages');
-        const p = document.createElement('p');
-        p.textContent = `${new Date().toLocaleTimeString()} - ${msg}`;
-        container.appendChild(p);
+        socket.emit('chat message', { alias: currentAlias, message: msg });
         input.value = '';
-        container.scrollTop = container.scrollHeight;
       }
     }
+
+    // Listen for incoming chat messages
+    socket.on('chat message', (data) => {
+      const p = document.createElement('p');
+      p.innerHTML = `<strong>${data.alias}</strong>: ${data.message}`;
+      messages.appendChild(p);
+      messages.scrollTop = messages.scrollHeight;
+    });
   </script>
 </body>
-<script src="/socket.io/socket.io.js"></script>
-<script>
-  const socket = io();
-  const messages = document.getElementById('messages');
-  const input = document.getElementById('messageInput');
-
-  let currentAlias = 'Unknown';
-
-  fetch('/session-info')
-    .then(res => res.json())
-    .then(data => {
-      currentAlias = data.alias;
-      document.getElementById('alias').textContent = data.alias;
-      document.getElementById('role').textContent = data.role;
-    });
-
-  function sendMessage() {
-    const msg = input.value.trim();
-    if (msg) {
-      socket.emit('chat message', { alias: currentAlias, message: msg });
-      input.value = '';
-    }
-  }
-
-  socket.on('chat message', (data) => {
-    const p = document.createElement('p');
-    p.innerHTML = `<strong>${data.alias}</strong>: ${data.message}`;
-    messages.appendChild(p);
-    messages.scrollTop = messages.scrollHeight;
-  });
-</script>
-
 </html>
