@@ -1,7 +1,3 @@
-const http = require('http').createServer(app);
-const { Server } = require('socket.io');
-const io = new Server(http);
-
 const express = require('express');
 const path = require('path');
 const session = require('express-session');
@@ -42,22 +38,23 @@ app.get('/', (req, res) => {
 // 🔐 Login Handler
 app.post('/login', (req, res) => {
   const { alias, passcode } = req.body;
-  const user = users[alias];
-  
-  console.log('🛂 Incoming login attempt:');
+  console.log('🛂 Login Attempt:');
   console.log('Alias:', alias);
   console.log('Passcode:', passcode);
-  console.log('User from DB:', user);
+
+  const user = users[alias];
+  console.log('Matched User:', user);
 
   if (user && user.passcode === passcode) {
-    console.log(`✅ Access granted to ${alias}`);
+    console.log(`✅ Login success for ${alias}`);
     req.session.user = user;
     res.redirect('/dashboard');
   } else {
-    console.log(`❌ Access denied for ${alias}`);
+    console.log(`❌ Login failed for ${alias}`);
     res.send('❌ Access Denied. Wrong alias or passcode.');
   }
 });
+
 // 🖥️ Unified Dashboard Route
 app.get('/dashboard', (req, res) => {
   if (req.session.user) {
@@ -84,11 +81,15 @@ app.get('/logout', (req, res) => {
 });
 
 // 🔥 Server Start
+
+const http = require('http').createServer(app);
+const io = require('socket.io')(http);
+
 io.on('connection', (socket) => {
   console.log('💬 A user connected');
 
   socket.on('chat message', (data) => {
-    io.emit('chat message', data); // Broadcast message to all users
+    io.emit('chat message', data); // Broadcast to all users
   });
 
   socket.on('disconnect', () => {
@@ -99,5 +100,3 @@ io.on('connection', (socket) => {
 http.listen(PORT, () => {
   console.log(`🌹 Black Rose Syndicate live at http://localhost:${PORT}`);
 });
-
-
