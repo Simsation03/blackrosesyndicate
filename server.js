@@ -1,3 +1,7 @@
+const http = require('http').createServer(app);
+const { Server } = require('socket.io');
+const io = new Server(http);
+
 const express = require('express');
 const path = require('path');
 const session = require('express-session');
@@ -80,8 +84,20 @@ app.get('/logout', (req, res) => {
 });
 
 // 🔥 Server Start
-app.listen(PORT, () => {
-  console.log(`🌹 Black Rose Syndicate running at http://localhost:${PORT}`);
+io.on('connection', (socket) => {
+  console.log('💬 A user connected');
+
+  socket.on('chat message', (data) => {
+    io.emit('chat message', data); // Broadcast message to all users
+  });
+
+  socket.on('disconnect', () => {
+    console.log('🚪 A user disconnected');
+  });
+});
+
+http.listen(PORT, () => {
+  console.log(`🌹 Black Rose Syndicate live at http://localhost:${PORT}`);
 });
 
 
