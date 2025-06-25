@@ -1,21 +1,21 @@
 ﻿<!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <title>Black Rose Login</title>
-    <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8" />
+  <title>Black Rose Login</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body style="background-image: url('background.jpg'); background-size: cover;">
-    <div class="login-box">
-        <img src="login-logo.png" alt="Black Rose Logo" />
-        <h1>Welcome to the Black Rose Syndicate,</h1>
-        <h1>Enter the Syndicate Passphrase to gain Access:</h1>
-        <form method="POST" action="/login">
-            <input type="text" name="alias" placeholder="ALIAS (UPPERCASE)" required />
-            <input type="password" name="passcode" placeholder="Passcode" required />
-            <button type="submit">Access</button>
-            <p id="message"></p>
-        </form>
-    </div>
+  <div class="login-box">
+    <img src="login-logo.png" alt="Black Rose Logo" />
+    <h1>Welcome to the Black Rose Syndicate</h1>
+    <h2>Enter Your Alias (IN UPPERCASE)</h2>
+    <form method="POST" action="/login">
+      <input type="text" name="alias" placeholder="ALIAS (UPPERCASE)" required style="text-transform: uppercase;" />
+      <input type="password" name="passcode" placeholder="Passcode" required />
+      <button type="submit">Access</button>
+      <p id="message"></p>
+    </form>
+  </div>
 </body>
 </html>
